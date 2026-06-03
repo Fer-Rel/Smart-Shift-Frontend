@@ -1,0 +1,126 @@
+/* ── Google Fonts (must come before all other rules) ── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&display=swap");
+
+/* =====================================================
+   Smart Shift — Global Design System (Tailwind v4)
+   ===================================================== */
+
+@import "tailwindcss";
+
+/* ── Theming & Design Tokens ── */
+@theme {
+  --color-brand-sky: oklch(65% 0.18 220);
+  --color-brand-indigo: oklch(60% 0.2 265);
+  --color-surface: oklch(18% 0.02 260);
+  --color-surface-raised: oklch(22% 0.02 260);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+}
+
+/* ── Base Styles ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a; /* slate-950 */
+  color: #f1f5f9;            /* slate-100 */
+  min-height: 100vh;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* slate-600 */
+}
+
+/* ── Date input styling (dark mode) ── */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5) sepia(0.5) saturate(3) hue-rotate(185deg);
+  cursor: pointer;
+  opacity: 0.7;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* ── Select arrow reset (custom handled via Tailwind) ── */
+select {
+  color-scheme: dark;
+}
+
+/* ── Animations ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s ease-out both;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.25s ease-out both;
+}
+
+/* ── Focus ring reset for better custom styling ── */
+:focus-visible {
+  outline: none;
+}
+
+/* ── Glassmorphism utility ── */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
