@@ -49,14 +49,23 @@ const Login: React.FC = () => {
   // HANDLERS
   // ──────────────────────────────────────────────
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
+
+  // 🔥 Filtro anti-letras: Si es el campo del DNI, solo permite números
+  if (name === 'dni') {
+    const soloNumeros = value.replace(/\D/g, ''); // Elimina cualquier letra o símbolo al instante
+    setForm((prev) => ({ ...prev, [name]: soloNumeros }));
+  } else {
+    // Comportamiento normal para la contraseña (password) u otros campos
     setForm((prev) => ({ ...prev, [name]: value }));
-    // Limpiar error del campo al escribir
-    if (errors[name as keyof FieldErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-    setApiError(null);
-  };
+  }
+
+  // Limpiar error del campo al escribir
+  if (errors[name as keyof FieldErrors]) {
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
+  setApiError(null);
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

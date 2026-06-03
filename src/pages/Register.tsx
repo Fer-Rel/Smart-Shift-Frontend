@@ -21,7 +21,7 @@ interface RegisterForm {
 type FormErrors = Partial<Record<keyof RegisterForm, string>>;
 
 // ──────────────────────────────────────────────
-// COMPONENTE
+// COMPONENTE PRINCIPAL
 // ──────────────────────────────────────────────
 const Register: React.FC = () => {
   const { registerAndLogin } = useAuth();
@@ -91,13 +91,24 @@ const Register: React.FC = () => {
   // HANDLERS
   // ──────────────────────────────────────────────
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
+
+  // 🔥 Filtro anti-letras para Teléfono y DNI
+  if (name === 'telefono' || name === 'dni') {
+    const soloNumeros = value.replace(/\D/g, ''); // Borra al instante cualquier letra o símbolo
+    setForm((prev) => ({ ...prev, [name]: soloNumeros }));
+  } else {
+    // Comportamiento normal para los demás campos (nombres, email, etc.)
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-    setApiError(null);
-  };
+  }
+
+  // Limpia los errores de validación del campo actual si el usuario ya empezó a corregirlo
+  if (errors[name as keyof FormErrors]) {
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
+  
+  setApiError(null);
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,80 +144,6 @@ const Register: React.FC = () => {
     }
   };
 
-  // ──────────────────────────────────────────────
-  // HELPER — campo con label y error
-  // ──────────────────────────────────────────────
-  const Field = ({
-    id,
-    label,
-    type = 'text',
-    placeholder,
-    inputMode,
-    maxLength,
-    min,
-    max,
-    extraRight,
-    autoComplete,
-  }: {
-    id: keyof RegisterForm;
-    label: string;
-    type?: string;
-    placeholder?: string;
-    inputMode?: React.InputHTMLAttributes<HTMLInputElement>['inputMode'];
-    maxLength?: number;
-    min?: string;
-    max?: string;
-    extraRight?: React.ReactNode;
-    autoComplete?: string;
-  }) => (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1.5">
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          name={id}
-          type={type}
-          inputMode={inputMode}
-          maxLength={maxLength}
-          min={min}
-          max={max}
-          value={form[id]}
-          onChange={handleChange}
-          placeholder={placeholder}
-          autoComplete={autoComplete}
-          className={`w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200
-            ${extraRight ? 'pr-11' : ''}
-            ${errors[id]
-              ? 'border-red-500/70 focus:ring-red-500/30'
-              : 'border-slate-700 focus:ring-sky-500/30 focus:border-sky-500/50'
-            }`}
-        />
-        {extraRight && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">{extraRight}</div>
-        )}
-      </div>
-      {errors[id] && (
-        <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          {errors[id]}
-        </p>
-      )}
-    </div>
-  );
-
-  const EyeButton = ({ show, toggle }: { show: boolean; toggle: () => void }) => (
-    <button type="button" onClick={toggle} className="text-slate-400 hover:text-slate-200 transition-colors">
-      {show
-        ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
-        : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-      }
-    </button>
-  );
-
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-16">
       {/* Orbs decorativos */}
@@ -229,20 +166,19 @@ const Register: React.FC = () => {
 
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {/* Fila 1: DNI */}
-            <Field id="dni" label="Número de DNI" placeholder="12345678" inputMode="numeric" maxLength={8} autoComplete="off" />
+            <Field id="dni" label="Número de DNI" placeholder="12345678" inputMode="numeric" maxLength={8} autoComplete="off" form={form} errors={errors} handleChange={handleChange} />
 
             {/* Fila 2: Nombres y Apellidos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field id="nombres" label="Nombres" placeholder="Ana María" autoComplete="given-name" />
-              <Field id="apellidos" label="Apellidos" placeholder="García López" autoComplete="family-name" />
+              <Field id="nombres" label="Nombres" placeholder="Ana María" autoComplete="given-name" form={form} errors={errors} handleChange={handleChange} />
+              <Field id="apellidos" label="Apellidos" placeholder="García López" autoComplete="family-name" form={form} errors={errors} handleChange={handleChange} />
             </div>
 
             {/* Fila 3: Email */}
-            <Field id="email" label="Correo electrónico" type="email" placeholder="ana@email.com" autoComplete="email" />
+            <Field id="email" label="Correo electrónico" type="email" placeholder="ana@email.com" autoComplete="email" form={form} errors={errors} handleChange={handleChange} />
 
             {/* Fila 4: Contraseñas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Override tipo para password con show/hide */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">Contraseña</label>
                 <div className="relative">
@@ -298,12 +234,12 @@ const Register: React.FC = () => {
 
             {/* Fila 5: Teléfono y Fecha de Nacimiento */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field id="telefono" label="Teléfono" type="tel" placeholder="987654321" inputMode="tel" maxLength={9} autoComplete="tel" />
-              <Field id="fecha_nacimiento" label="Fecha de Nacimiento" type="date" max={maxBirthDateStr} autoComplete="bday" />
+              <Field id="telefono" label="Teléfono" type="tel" placeholder="987654321" inputMode="tel" maxLength={9} autoComplete="tel" form={form} errors={errors} handleChange={handleChange} />
+              <Field id="fecha_nacimiento" label="Fecha de Nacimiento" type="date" max={maxBirthDateStr} autoComplete="bday" form={form} errors={errors} handleChange={handleChange} />
             </div>
 
             {/* Fila 6: Dirección */}
-            <Field id="direccion" label="Dirección" placeholder="Jr. Los Álamos 123, Lima" autoComplete="street-address" />
+            <Field id="direccion" label="Dirección" placeholder="Jr. Los Álamos 123, Lima" autoComplete="street-address" form={form} errors={errors} handleChange={handleChange} />
 
             {/* Error de API */}
             {apiError && (
@@ -346,5 +282,93 @@ const Register: React.FC = () => {
     </div>
   );
 };
+
+// ──────────────────────────────────────────────
+// COMPONENTES AUXILIARES (AFUERA DEL PRINCIPAL)
+// ──────────────────────────────────────────────
+interface FieldProps {
+  id: keyof RegisterForm;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  inputMode?: React.InputHTMLAttributes<HTMLInputElement>['inputMode'];
+  maxLength?: number;
+  min?: string;
+  max?: string;
+  extraRight?: React.ReactNode;
+  autoComplete?: string;
+  form: RegisterForm;
+  errors: FormErrors;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+}
+
+const Field: React.FC<FieldProps> = ({
+  id,
+  label,
+  type = 'text',
+  placeholder,
+  inputMode,
+  maxLength,
+  min,
+  max,
+  extraRight,
+  autoComplete,
+  form,
+  errors,
+  handleChange,
+}) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1.5">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        id={id}
+        name={id}
+        type={type}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        min={min}
+        max={max}
+        value={form[id]}
+        onChange={handleChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className={`w-full px-4 py-2.5 rounded-xl bg-slate-800/60 border text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200
+          ${extraRight ? 'pr-11' : ''}
+          ${errors[id]
+            ? 'border-red-500/70 focus:ring-red-500/30'
+            : 'border-slate-700 focus:ring-sky-500/30 focus:border-sky-500/50'
+          }`}
+      />
+      {extraRight && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">{extraRight}</div>
+      )}
+    </div>
+    {errors[id] && (
+      <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1">
+        <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+        {errors[id]}
+      </p>
+    )}
+  </div>
+);
+
+const EyeButton = ({ show, toggle }: { show: boolean; toggle: () => void }) => (
+  <button type="button" onClick={toggle} className="text-slate-400 hover:text-slate-200 transition-colors">
+    {show ? (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+      </svg>
+    ) : (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    )}
+  </button>
+);
 
 export default Register;
