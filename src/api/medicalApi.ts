@@ -77,6 +77,8 @@ export interface Cita {
   codigo_qr?: string;        // Valor alfanumérico del QR (ej. "A1B2C3D4")
   medico_nombre?: string;
   medico_apellidos?: string;
+  nombres?: string;
+  apellidos?: string;
   especialidad?: string;
   hospital?: string;
   // El backend puede retornar distintos nombres de campo; se acepta cualquiera
