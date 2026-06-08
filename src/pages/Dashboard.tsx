@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../context/AuthContext';
 import { cancelarCita, getMisCitas } from '../api/medicalApi';
 import type { Cita, EstadoCita } from '../api/medicalApi';
+import { ChatWidget } from '../components/ChatWidget';
 
 // ══════════════════════════════════════════════════════
 // HELPERS
@@ -586,6 +587,7 @@ const Dashboard: React.FC = () => {
           )}
         </div>
       </div>
+      <ChatWidget />
     </>
   );
 };

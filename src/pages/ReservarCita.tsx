@@ -7,6 +7,7 @@ import {
   getMedicosDisponibles,
 } from '../api/medicalApi';
 import type { Especialidad, Hospital, Medico, SlotDisponible } from '../api/medicalApi';
+import { ChatWidget } from '../components/ChatWidget';
 
 // ──────────────────────────────────────────────
 // TIPOS DE ESTADO DE SELECCIÓN
@@ -537,6 +538,7 @@ const ReservarCita: React.FC = () => {
           </div>
         )}
       </div>
+      <ChatWidget />
     </div>
   );
 };
