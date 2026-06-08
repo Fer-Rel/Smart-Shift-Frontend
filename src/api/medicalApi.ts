@@ -75,12 +75,12 @@ export interface Cita {
   hora_cita: string;
   estado: EstadoCita;
   codigo_qr?: string;        // Valor alfanumérico del QR (ej. "A1B2C3D4")
-  medico_nombre?: string;
-  medico_apellidos?: string;
-  nombres?: string;
-  apellidos?: string;
-  especialidad?: string;
-  hospital?: string;
+  medico_nombre?: string;    // Deprecated: usar nombres y apellidos planos
+  medico_apellidos?: string; // Deprecated: usar nombres y apellidos planos
+  nombres?: string;          // Nombre del médico asignado (poblado en getMisCitas)
+  apellidos?: string;        // Apellidos del médico asignado (poblado en getMisCitas)
+  especialidad?: string;     // Especialidad médica de la cita (poblada en getMisCitas)
+  hospital?: string;         // Nombre del hospital/sede de la cita (poblado en getMisCitas)
   // El backend puede retornar distintos nombres de campo; se acepta cualquiera
   [key: string]: unknown;
 }
