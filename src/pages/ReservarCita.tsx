@@ -538,7 +538,11 @@ const ReservarCita: React.FC = () => {
           </div>
         )}
       </div>
-      <ChatWidget />
+      <ChatWidget 
+        hospitalId={selection.hospitalId}
+        especialidadId={selection.especialidadId}
+        fecha={selection.fecha}
+      />
     </div>
   );
 };

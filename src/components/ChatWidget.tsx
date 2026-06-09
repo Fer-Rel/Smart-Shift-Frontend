@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send } from 'lucide-react'; // Asegúrate de tener lucide-react instalado
+import { MessageSquare, X, Send } from 'lucide-react';
 
 interface Mensaje {
   id: string;
@@ -8,10 +8,22 @@ interface Mensaje {
   timestamp: Date;
 }
 
-export const ChatWidget: React.FC = () => {
+interface ChatWidgetProps {
+  hospitalId?: number | null;
+  especialidadId?: number | null;
+  fecha?: string;
+}
+
+const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://127.0.0.1:8000';
+
+export const ChatWidget: React.FC<ChatWidgetProps> = ({ hospitalId = null, especialidadId = null, fecha = '' }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [mensajeInput, setMensajeInput] = useState<string>('');
+  
+  // CANDADO CRÍTICO: isLoading controlará el bloqueo físico de la UI para proteger la cuota de la API
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
+  
   const [historial, setHistorial] = useState<Mensaje[]>([
     {
       id: 'welcome',
@@ -23,7 +35,6 @@ export const ChatWidget: React.FC = () => {
 
   const contenedorMensajesRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll al último mensaje cada vez que cambia el historial o el estado de escritura
   useEffect(() => {
     if (contenedorMensajesRef.current) {
       contenedorMensajesRef.current.scrollTo({
@@ -33,37 +44,66 @@ export const ChatWidget: React.FC = () => {
     }
   }, [historial, isTyping]);
 
-  const manejarEnvio = (e: React.FormEvent) => {
+  const manejarEnvio = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mensajeInput.trim()) return;
+    
+    // Si ya hay una petición en curso, abortamos inmediatamente cualquier re-envío accidental
+    if (isLoading) return;
 
-    // 1. Agregar mensaje del usuario
+    const textoMensaje = mensajeInput.trim();
+    if (!textoMensaje) return;
+
+    // Activamos los dos estados de carga en paralelo para congelar la interfaz
+    setIsLoading(true);
+    setIsTyping(true);
+    setMensajeInput(''); // Limpiamos el input de inmediato para evitar envíos dobles por retraso visual
+
+    const hoyStr = new Date().toISOString().split('T')[0];
+
     const nuevoMensajeUsuario: Mensaje = {
       id: crypto.randomUUID(),
       sender: 'user',
-      text: mensajeInput.trim(),
+      text: textoMensaje,
       timestamp: new Date(),
     };
 
     setHistorial((prev) => [...prev, nuevoMensajeUsuario]);
-    setMensajeInput('');
 
-    // 2. Simular estado "Escribiendo..." del asistente
-    setIsTyping(true);
+    try {
+      const respuesta = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: textoMensaje,
+          hospitalId: hospitalId,
+          especialidadId: especialidadId,
+          fecha: fecha || hoyStr,
+        }),
+      });
 
-    setTimeout(() => {
-      setIsTyping(false);
+      if (!respuesta.ok) throw new Error('Error en el servidor');
+      const datos = await respuesta.json();
 
-      // 3. Generar respuesta mock de IA / Soporte
-      const respuestaBot: Mensaje = {
+      setHistorial((prev) => [...prev, {
         id: crypto.randomUUID(),
         sender: 'bot',
-        text: 'Agradecemos tu mensaje en la simulación de Smart-Shift. Próximamente, este canal estará conectado directamente a nuestro servicio de Backend para resolver tus dudas médicas en tiempo real.',
+        text: datos.response,
         timestamp: new Date(),
-      };
-
-      setHistorial((prev) => [...prev, respuestaBot]);
-    }, 1200); // 1.2 segundos de espera simulada
+      }]);
+    } catch (error) {
+      setHistorial((prev) => [...prev, {
+        id: crypto.randomUUID(),
+        sender: 'bot',
+        text: '📋 El sistema de horarios está actualizándose. Por favor, escribe nuevamente tu consulta en unos momentos.',
+        timestamp: new Date(),
+      }]);
+    } finally {
+      // Liberamos los candados una vez que el backend devuelva la respuesta (sea exitosa o error)
+      setIsTyping(false);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,7 +115,6 @@ export const ChatWidget: React.FC = () => {
           className="relative flex items-center justify-center w-14 h-14 text-white rounded-full bg-gradient-to-r from-sky-500 to-indigo-500 shadow-lg shadow-sky-500/30 hover:scale-105 active:scale-95 transition-all duration-300"
         >
           <MessageSquare className="w-6 h-6" />
-          {/* Indicador visual animado (Notificación Neon Pulsante) */}
           <span className="absolute top-0 right-0 flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -96,7 +135,6 @@ export const ChatWidget: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-full bg-sky-500/10 flex items-center justify-center border border-sky-500/20">
                 <span className="font-bold text-sky-400">SS</span>
-                {/* Estado en línea (verde animado) */}
                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900 animate-pulse" />
               </div>
               <div>
@@ -123,7 +161,7 @@ export const ChatWidget: React.FC = () => {
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                  className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm shadow-sm whitespace-pre-line ${
                     msg.sender === 'user'
                       ? 'bg-sky-500 text-white rounded-tr-none'
                       : 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700/50'
@@ -137,7 +175,7 @@ export const ChatWidget: React.FC = () => {
               </div>
             ))}
 
-            {/* INDICADOR DE ESCRITURA ("ESCRIBIENDO...") */}
+            {/* INDICADOR DE ESCRITURA */}
             {isTyping && (
               <div className="flex flex-col items-start animate-fade-in">
                 <div className="bg-slate-800 text-slate-400 border border-slate-700/50 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-sm">
@@ -149,7 +187,7 @@ export const ChatWidget: React.FC = () => {
             )}
           </div>
 
-          {/* INPUT DE TEXTO */}
+          {/* INPUT DE TEXTO BLINDADO */}
           <form 
             onSubmit={manejarEnvio}
             className="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2"
@@ -158,13 +196,15 @@ export const ChatWidget: React.FC = () => {
               type="text"
               value={mensajeInput}
               onChange={(e) => setMensajeInput(e.target.value)}
-              placeholder="Escribe un mensaje aquí..."
-              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500/50 transition-colors"
+              placeholder={isLoading ? "Esperando respuesta de la IA..." : "Escribe un mensaje aquí..."}
+              disabled={isLoading} // Deshabilita el input mientras carga para evitar escritura fantasma
+              className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <button
               type="submit"
-              disabled={!mensajeInput.trim()}
-              className="p-2 rounded-xl bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-40 disabled:hover:bg-sky-500 transition-all flex items-center justify-center shadow-md shadow-sky-500/10"
+              // El botón se bloquea si el input está vacío O si ya hay una petición en curso (isLoading)
+              disabled={isLoading || !mensajeInput.trim()}
+              className="p-2 rounded-xl bg-sky-500 text-white hover:bg-sky-600 disabled:opacity-40 disabled:hover:bg-sky-500 transition-all flex items-center justify-center shadow-md shadow-sky-500/10 disabled:cursor-not-allowed"
             >
               <Send className="w-4 h-4" />
             </button>
